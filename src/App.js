@@ -24,6 +24,32 @@ const tempMovieData = [
   },
 ];
 
+const watched = [
+  {
+    imdbID: "tt1375666",
+    Title: "Inception",
+    Year: "2010",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
+    runtime: 148,
+    imdbRating: 8.8,
+    userRating: 10,
+  },
+  {
+    imdbID: "tt0088763",
+    Title: "Back to the Future",
+    Year: "1985",
+    Poster:
+      "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
+    runtime: 116,
+    imdbRating: 8.5,
+    userRating: 9,
+  },
+];
+
+const findAverage = (arr) =>
+  arr.reduce((sum, num) => sum + num, 0) / arr.length;
+
 export default function App() {
   return (
     <>
@@ -52,7 +78,7 @@ function Nav() {
       ></input>
 
       <p className="num-results">
-        Showing <strong>2</strong> top results
+        Showing <strong>{tempMovieData.length}</strong> top results
       </p>
     </div>
   );
@@ -68,22 +94,76 @@ function Main() {
 }
 
 function Leftbox() {
+  const [toggle, setToggle] = useState(true);
+
   return (
     <div className="box">
-      <button className="btn-toggle">-</button>
-      <ul className="list">
-        {tempMovieData.map((mov) => (
-          <Movie movie={mov} />
-        ))}
-      </ul>
+      <button className="btn-toggle" onClick={() => setToggle((tg) => !tg)}>
+        {!toggle ? "-" : "+"}
+      </button>
+      {toggle && (
+        <ul className="list">
+          {tempMovieData.map((mov) => (
+            <Movie movie={mov} />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
 
 function Rightbox() {
+  const [toggle, setToggle] = useState(true);
+
   return (
     <div className="box">
-      <button className="btn-toggle">-</button>
+      <button className="btn-toggle" onClick={() => setToggle((tg) => !tg)}>
+        {!toggle ? "-" : "+"}
+      </button>
+      {toggle && (
+        <>
+          <Summary />
+          <ul className="list">
+            {watched.map((movie) => (
+              <WatchedMovie watchedMovie={movie} />
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Summary() {
+  const averageIMDBRating = findAverage(
+    watched.map((movie) => movie.imdbRating),
+  );
+  const averageUserRating = findAverage(
+    watched.map((movie) => movie.userRating),
+  );
+  const averageRuntime = findAverage(watched.map((movie) => movie.runtime));
+
+  return (
+    <div className="summary">
+      <h2>Watched Movies</h2>
+      <div>
+        <p>
+          <span>#️⃣</span>
+          <span>{watched.length} movies</span>
+        </p>
+        <p>
+          <span>⭐️</span>
+          <span>{averageIMDBRating}</span>
+        </p>
+        <p>
+          <span>🌟</span>
+          <span>{averageUserRating}</span>
+        </p>
+        <p>
+          <span>⏳</span>
+          <span>{Math.round(averageRuntime / 60)} hr</span>
+        </p>
+      </div>
     </div>
   );
 }
@@ -91,11 +171,34 @@ function Rightbox() {
 function Movie({ movie }) {
   return (
     <li>
-      <img src={movie.Posteroster} alt={`${movie.Title} poster`} />
+      <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
         <p>Realesed:</p>
         <p>{movie.Year}</p>
+      </div>
+    </li>
+  );
+}
+
+function WatchedMovie({ watchedMovie }) {
+  return (
+    <li>
+      <img src={watchedMovie.Poster} alt={`${watchedMovie.Title} poster`} />
+      <h3>{watchedMovie.Title}</h3>
+      <div>
+        <p>
+          <span>⭐️</span>
+          <span>{watchedMovie.imdbRating}</span>
+        </p>
+        <p>
+          <span>🌟</span>
+          <span>{watchedMovie.userRating}</span>
+        </p>
+        <p>
+          <span>⏳</span>
+          <span>{Math.round(watchedMovie.runtime / 60)} hr</span>
+        </p>
       </div>
     </li>
   );
