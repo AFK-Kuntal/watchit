@@ -1,29 +1,5 @@
 import { useEffect, useState } from "react";
 
-const tempMovieData = [
-  {
-    imdbID: "tt1375666",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt0133093",
-    Title: "The Matrix",
-    Year: "1999",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg",
-  },
-  {
-    imdbID: "tt6751668",
-    Title: "Parasite",
-    Year: "2019",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg",
-  },
-];
-
 const watched = [
   {
     imdbID: "tt1375666",
@@ -53,49 +29,50 @@ const findAverage = (arr) =>
 export default function App() {
   const [search, setSearch] = useState("");
   const [load, setLoad] = useState(false);
-  const [err, setErr] = useState("");
-  useEffect(
-    function () {
-      async function fetchMovie() {
-        try {
-          setLoad(true);
-          setErr("");
-          const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
-          );
-          console.log(res);
-          if (!res.ok) throw new Error("Something Went Wrong");
-          const data = await res.json();
-          console.log(data);
-          if (data.Response === "False") throw new Error("Not Found");
-        } catch (err) {
-          setErr(err.message);
-        } finally {
-          setLoad(false);
-        }
+  const [error, setError] = useState("");
+  const [movies, setMovies] = useState([]);
+  const numMovies = movies.length;
+  useEffect(() => {
+    if (!search) return;
+    async function fetchMovie() {
+      try {
+        setLoad(true);
+        setError("");
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
+        );
+        console.log(res);
+        if (!res.ok) throw new Error("Something Went Wrong");
+        const data = await res.json();
+        console.log(data);
+        if (data.Response === "False") throw new Error("Not Found");
+        setMovies(data.Search);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoad(false);
       }
-      fetchMovie();
-    },
-    [search],
-  );
+    }
+    fetchMovie();
+  }, [search]);
   return (
     <>
-      <Nav search={search} setSearch={setSearch} />
+      <Nav search={search} setSearch={setSearch} numMovies={numMovies} />
       <Main>
         <Box>
           {load && <Loader />}
-
-          <Leftbox />
+          {error && <Error message={error} />}
+          {!load && !error && <Leftbox movies={movies} />}
         </Box>
         <Box>
-          <Rightbox />
+          <Rightbox movies={movies} />
         </Box>
       </Main>
     </>
   );
 }
 
-function Nav({ search, setSearch }) {
+function Nav({ search, setSearch, numMovies }) {
   return (
     <div className="nav-bar">
       <nav className="logo">
@@ -112,7 +89,7 @@ function Nav({ search, setSearch }) {
       ></input>
 
       <p className="num-results">
-        Showing <strong>{tempMovieData.length}</strong> top results
+        Showing <strong>{numMovies}</strong> top results
       </p>
     </div>
   );
@@ -123,6 +100,10 @@ function Main({ children }) {
 
 function Loader() {
   return <p className="loader">Loading..</p>;
+}
+
+function Error({ message }) {
+  return <p className="error">{message}</p>;
 }
 
 function Box({ children }) {
@@ -138,11 +119,11 @@ function Box({ children }) {
   );
 }
 
-function Leftbox() {
+function Leftbox({ movies }) {
   return (
     <ul className="list">
-      {tempMovieData.map((mov) => (
-        <Movie movie={mov} />
+      {movies?.map((mov) => (
+        <Movie movie={mov} key={mov.imdbID} />
       ))}
     </ul>
   );
@@ -154,7 +135,7 @@ function Rightbox() {
       <Summary />
       <ul className="list">
         {watched.map((movie) => (
-          <WatchedMovie watchedMovie={movie} />
+          <WatchedMovie watchedMovie={movie} key={movie.imdbID} />
         ))}
       </ul>
     </>
