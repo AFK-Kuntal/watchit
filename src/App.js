@@ -52,28 +52,45 @@ const findAverage = (arr) =>
 
 export default function App() {
   const [search, setSearch] = useState("");
-  useEffect(function () {
-    try {
+  const [load, setLoad] = useState(false);
+  const [err, setErr] = useState("");
+  useEffect(
+    function () {
       async function fetchMovie() {
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
-        );
-        console.log(res);
-        if (!res.ok) throw new Error("Something Went Wrong");
-        const data = await res.json();
-        console.log(data);
-        if (data.Response === "False") throw new Error("Not Found");
+        try {
+          setLoad(true);
+          setErr("");
+          const res = await fetch(
+            `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
+          );
+          console.log(res);
+          if (!res.ok) throw new Error("Something Went Wrong");
+          const data = await res.json();
+          console.log(data);
+          if (data.Response === "False") throw new Error("Not Found");
+        } catch (err) {
+          setErr(err.message);
+        } finally {
+          setLoad(false);
+        }
       }
-    } catch (err) {
-      console.log(err);
-      console.log(err.message);
-    }
-    fetchMovie();
-  }, []);
+      fetchMovie();
+    },
+    [search],
+  );
   return (
     <>
       <Nav search={search} setSearch={setSearch} />
-      <Main />
+      <Main>
+        <Box>
+          {load && <Loader />}
+
+          <Leftbox />
+        </Box>
+        <Box>
+          <Rightbox />
+        </Box>
+      </Main>
     </>
   );
 }
@@ -100,15 +117,15 @@ function Nav({ search, setSearch }) {
     </div>
   );
 }
-function Main() {
-  return (
-    <main className="main">
-      <Leftbox />
-      <Rightbox />
-    </main>
-  );
+function Main({ children }) {
+  return <main className="main">{children}</main>;
 }
-function Leftbox() {
+
+function Loader() {
+  return <p className="loader">Loading..</p>;
+}
+
+function Box({ children }) {
   const [toggle, setToggle] = useState(true);
 
   return (
@@ -116,36 +133,31 @@ function Leftbox() {
       <button className="btn-toggle" onClick={() => setToggle((tg) => !tg)}>
         {!toggle ? "-" : "+"}
       </button>
-      {toggle && (
-        <ul className="list">
-          {tempMovieData.map((mov) => (
-            <Movie movie={mov} />
-          ))}
-        </ul>
-      )}
+      {toggle && children}
     </div>
+  );
+}
+
+function Leftbox() {
+  return (
+    <ul className="list">
+      {tempMovieData.map((mov) => (
+        <Movie movie={mov} />
+      ))}
+    </ul>
   );
 }
 
 function Rightbox() {
-  const [toggle, setToggle] = useState(true);
-
   return (
-    <div className="box">
-      <button className="btn-toggle" onClick={() => setToggle((tg) => !tg)}>
-        {!toggle ? "-" : "+"}
-      </button>
-      {toggle && (
-        <>
-          <Summary />
-          <ul className="list">
-            {watched.map((movie) => (
-              <WatchedMovie watchedMovie={movie} />
-            ))}
-          </ul>
-        </>
-      )}
-    </div>
+    <>
+      <Summary />
+      <ul className="list">
+        {watched.map((movie) => (
+          <WatchedMovie watchedMovie={movie} />
+        ))}
+      </ul>
+    </>
   );
 }
 
