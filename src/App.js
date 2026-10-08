@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -46,22 +46,39 @@ const watched = [
     userRating: 9,
   },
 ];
-
+const APIkey = "f84fc31d";
 const findAverage = (arr) =>
   arr.reduce((sum, num) => sum + num, 0) / arr.length;
 
 export default function App() {
+  const [search, setSearch] = useState("");
+  useEffect(function () {
+    try {
+      async function fetchMovie() {
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
+        );
+        console.log(res);
+        if (!res.ok) throw new Error("Something Went Wrong");
+        const data = await res.json();
+        console.log(data);
+        if (data.Response === "False") throw new Error("Not Found");
+      }
+    } catch (err) {
+      console.log(err);
+      console.log(err.message);
+    }
+    fetchMovie();
+  }, []);
   return (
     <>
-      <Nav />
+      <Nav search={search} setSearch={setSearch} />
       <Main />
     </>
   );
 }
 
-function Nav() {
-  const [search, setSearch] = useState("");
-
+function Nav({ search, setSearch }) {
   return (
     <div className="nav-bar">
       <nav className="logo">

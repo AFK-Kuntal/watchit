@@ -14,7 +14,7 @@ const textStyle = {
   fontSize: "32px",
 };
 export default function StarComponent({
-  defaultRating = 5,
+  defaultRating = 3,
   maxRating = 5,
   className = "",
   size = 32,
