@@ -32,7 +32,7 @@ export default function App() {
   const [load, setLoad] = useState(false);
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
-  const [selectedId, setSelectedId] = useState(1234);
+  const [selectedId, setSelectedId] = useState(null);
   const numMovies = movies.length;
 
   const handleSelected = (id) => {
@@ -258,7 +258,6 @@ function SelectedMovies({ selectedId, removeSelcted }) {
 
   const {
     Title: title,
-    Year: year,
     Poster: poster,
     Runtime: runtime,
     imdbRating,
@@ -267,6 +266,8 @@ function SelectedMovies({ selectedId, removeSelcted }) {
     Actors: actors,
     Director: director,
     Genre: genre,
+    Rated: rating,
+    BoxOffice: boxOffice,
   } = details;
 
   return (
@@ -290,6 +291,21 @@ function SelectedMovies({ selectedId, removeSelcted }) {
           {" "}
           <StarComponent maxRating={10} size={24} />
         </div>
+        <p>
+          <em>{plot}</em>
+        </p>
+        <p>
+          <strong>Actors: </strong> <p>{actors}</p>
+        </p>
+        <p>
+          <strong>Directed By: </strong> <p>{director}</p>
+        </p>
+        <p>
+          <strong>Rated For: </strong> <p>{rating}</p>
+        </p>
+        <p>
+          <strong>Box Office Collection: </strong> <p>{boxOffice}</p>
+        </p>
       </section>
     </div>
   );
