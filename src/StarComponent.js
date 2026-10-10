@@ -10,11 +10,8 @@ const starContainer = {
   display: "flex",
 };
 
-const textStyle = {
-  fontSize: "32px",
-};
 export default function StarComponent({
-  defaultRating = 3,
+  defaultRating = null,
   maxRating = 5,
   className = "",
   size = 32,
@@ -22,6 +19,9 @@ export default function StarComponent({
   color = "green",
   onSetRating = () => {},
 }) {
+  const textStyle = {
+    fontSize: `${size}px`,
+  };
   const [rate, setRate] = useState(defaultRating);
   const [tempRate, setTempRate] = useState(0);
   function handleRating(rating) {

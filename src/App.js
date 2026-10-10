@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import StarComponent from "./StarComponent";
 
 const watched = [
   {
@@ -239,13 +240,18 @@ function SelectedMovies({ selectedId, removeSelcted }) {
   const [details, setDetails] = useState({});
   useEffect(() => {
     async function fetchMovieById() {
-      const res = await fetch(
-        `http://www.omdbapi.com/?apikey=${APIkey}&i=${selectedId}`,
-      );
-      if (!res.ok) throw new Error("Something went wrong");
-      const data = await res.json();
-      if (data.Response === "False") throw new Error("Details not Found");
-      console.log(data);
+      try {
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${APIkey}&i=${selectedId}`,
+        );
+        if (!res.ok) throw new Error("Something went wrong");
+        const data = await res.json();
+        if (data.Response === "False") throw new Error("Details not Found");
+        console.log(data);
+        setDetails(data);
+      } catch (err) {
+        console.error(err.message);
+      }
     }
     fetchMovieById();
   }, [selectedId]);
@@ -261,7 +267,7 @@ function SelectedMovies({ selectedId, removeSelcted }) {
     Actors: actors,
     Director: director,
     Genre: genre,
-  } = data;
+  } = details;
 
   return (
     <div className="details">
@@ -270,7 +276,21 @@ function SelectedMovies({ selectedId, removeSelcted }) {
           &larr;
         </button>
         <img src={poster} alt={`${title} Poster`} />
+        <div className="details-overview">
+          <h2>{title}</h2>
+          <p>
+            {released} &bull; {runtime}
+          </p>
+          <p>{genre}</p>
+          <p>⭐️ {imdbRating}</p>
+        </div>
       </header>
+      <section>
+        <div className="rating">
+          {" "}
+          <StarComponent maxRating={10} size={24} />
+        </div>
+      </section>
     </div>
   );
 }
