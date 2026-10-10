@@ -31,9 +31,19 @@ export default function App() {
   const [load, setLoad] = useState(false);
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
+  const [selectedId, setSelectedId] = useState(1234);
   const numMovies = movies.length;
+
+  const handleSelected = (id) => {
+    setSelectedId(id);
+    console.log(id);
+  };
+  const removeSelcted = () => setSelectedId(null);
   useEffect(() => {
-    if (!search) return;
+    if (!search) {
+      setMovies([]);
+      return;
+    }
     async function fetchMovie() {
       try {
         setLoad(true);
@@ -43,6 +53,7 @@ export default function App() {
         );
         console.log(res);
         if (!res.ok) throw new Error("Something Went Wrong");
+
         const data = await res.json();
         console.log(data);
         if (data.Response === "False") throw new Error("Not Found");
@@ -60,12 +71,24 @@ export default function App() {
       <Nav search={search} setSearch={setSearch} numMovies={numMovies} />
       <Main>
         <Box>
+          {!search && !load && !error && (
+            <p className="loader">Start Searching</p>
+          )}
           {load && <Loader />}
           {error && <Error message={error} />}
-          {!load && !error && <Leftbox movies={movies} />}
+          {!load && !error && (
+            <Leftbox movies={movies} handleSelected={handleSelected} />
+          )}
         </Box>
         <Box>
-          <Rightbox movies={movies} />
+          {selectedId ? (
+            <SelectedMovies
+              selectedId={selectedId}
+              removeSelcted={removeSelcted}
+            />
+          ) : (
+            <Rightbox movies={movies} />
+          )}
         </Box>
       </Main>
     </>
@@ -119,11 +142,11 @@ function Box({ children }) {
   );
 }
 
-function Leftbox({ movies }) {
+function Leftbox({ movies, handleSelected }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((mov) => (
-        <Movie movie={mov} key={mov.imdbID} />
+        <Movie movie={mov} key={mov.imdbID} handleSelected={handleSelected} />
       ))}
     </ul>
   );
@@ -176,9 +199,9 @@ function Summary() {
   );
 }
 
-function Movie({ movie }) {
+function Movie({ movie, handleSelected }) {
   return (
-    <li>
+    <li onClick={() => handleSelected(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
@@ -209,5 +232,45 @@ function WatchedMovie({ watchedMovie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function SelectedMovies({ selectedId, removeSelcted }) {
+  const [details, setDetails] = useState({});
+  useEffect(() => {
+    async function fetchMovieById() {
+      const res = await fetch(
+        `http://www.omdbapi.com/?apikey=${APIkey}&i=${selectedId}`,
+      );
+      if (!res.ok) throw new Error("Something went wrong");
+      const data = await res.json();
+      if (data.Response === "False") throw new Error("Details not Found");
+      console.log(data);
+    }
+    fetchMovieById();
+  }, [selectedId]);
+
+  const {
+    Title: title,
+    Year: year,
+    Poster: poster,
+    Runtime: runtime,
+    imdbRating,
+    Plot: plot,
+    Released: released,
+    Actors: actors,
+    Director: director,
+    Genre: genre,
+  } = data;
+
+  return (
+    <div className="details">
+      <header>
+        <button className="btn-back" onClick={removeSelcted}>
+          &larr;
+        </button>
+        <img src={poster} alt={`${title} Poster`} />
+      </header>
+    </div>
   );
 }
