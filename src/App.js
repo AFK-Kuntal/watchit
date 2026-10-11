@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import StarComponent from "./StarComponent";
 import { useLocalStorage } from "./useLocalStorage";
+import { useKeyPress } from "./useKeyPress";
 
 const APIkey = "f84fc31d";
 const findAverage = (arr) =>
@@ -110,18 +111,23 @@ export default function App() {
 function Nav({ search, setSearch, numMovies }) {
   const searchEl = useRef(null);
   console.log(searchEl);
-  useEffect(() => {
-    const callback = (e) => {
-      if (document.activeElement === searchEl.current) return;
-      if (e.code === "Enter") {
-        searchEl.current.focus();
-        setSearch("");
-      }
-    };
+  // useEffect(() => {
+  //   const callback = (e) => {
+  //     if (document.activeElement === searchEl.current) return;
+  //     if (e.code === "Enter") {
+  //       searchEl.current.focus();
+  //       setSearch("");
+  //     }
+  //   };
 
-    document.addEventListener("keydown", callback);
-    return () => document.removeEventListener("keydown", callback);
-  }, [setSearch]);
+  //   document.addEventListener("keydown", callback);
+  //   return () => document.removeEventListener("keydown", callback);
+  // }, [setSearch]);
+  useKeyPress("Enter", function () {
+    if (document.activeElement === searchEl.current) return;
+    searchEl.current.focus();
+    setSearch("");
+  });
 
   return (
     <div className="nav-bar">
@@ -282,6 +288,12 @@ function SelectedMovies({
   const [details, setDetails] = useState({});
   const [userRating, setUserRating] = useState(null);
   const [loading, setLoading] = useState(false);
+  const countStar = useRef(0);
+
+  useEffect(() => {
+    if (userRating) countStar.current++;
+  }, [userRating]);
+
   useEffect(() => {
     async function fetchMovieById() {
       try {
@@ -327,6 +339,7 @@ function SelectedMovies({
       imdbRating: Number(imdbRating),
       userRating,
       runtime: Number(runtime.split(" ").at(0)),
+      ratingDecisions: countStar.current,
     };
     handleAddMovie(newMovie);
     removeSelcted();
@@ -341,15 +354,16 @@ function SelectedMovies({
     };
   }, [title]);
 
-  useEffect(() => {
-    const esckey = (e) => {
-      if (e.code === "Escape") removeSelcted();
-    };
+  // useEffect(() => {
+  //   const esckey = (e) => {
+  //     if (e.code === "Escape") removeSelcted();
+  //   };
 
-    document.addEventListener("keydown", esckey);
+  //   document.addEventListener("keydown", esckey);
 
-    return () => document.removeEventListener("keydown", esckey);
-  }, [removeSelcted]);
+  //   return () => document.removeEventListener("keydown", esckey);
+  // }, [removeSelcted]);
+  useKeyPress("Escape", removeSelcted);
 
   //storing in local storage
   useEffect(() => {}, []);
