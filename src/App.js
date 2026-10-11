@@ -25,7 +25,7 @@ import StarComponent from "./StarComponent";
 // ];
 const APIkey = "f84fc31d";
 const findAverage = (arr) =>
-  arr.reduce((sum, num) => sum + num, 0) / arr.length;
+  arr.length ? arr.reduce((sum, num) => sum + num, 0) / arr.length : 0;
 
 export default function App() {
   const [search, setSearch] = useState("");
@@ -41,9 +41,6 @@ export default function App() {
     console.log(id);
   };
 
-  // function handleAddMovie(movie){
-  //   setWatched((watched)=>[...watched, movie]);
-  // }
   const handleAddMovie = (movie) =>
     setWatched((watched) => [...watched, movie]);
 
@@ -277,9 +274,11 @@ function SelectedMovies({
 }) {
   const [details, setDetails] = useState({});
   const [userRating, setUserRating] = useState(null);
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     async function fetchMovieById() {
       try {
+        setLoading(true);
         const res = await fetch(
           `http://www.omdbapi.com/?apikey=${APIkey}&i=${selectedId}`,
         );
@@ -288,6 +287,7 @@ function SelectedMovies({
         if (data.Response === "False") throw new Error("Details not Found");
         console.log(data);
         setDetails(data);
+        setLoading(false);
       } catch (err) {
         console.error(err.message);
       }
@@ -334,59 +334,75 @@ function SelectedMovies({
     };
   }, [title]);
 
+  useEffect(() => {
+    const esckey = (e) => {
+      if (e.code === "Escape") removeSelcted();
+    };
+
+    document.addEventListener("keydown", esckey);
+
+    return () => document.removeEventListener("keydown", esckey);
+  }, [removeSelcted]);
+
   return (
     <div className="details">
-      <header>
-        <button className="btn-back" onClick={removeSelcted}>
-          &larr;
-        </button>
-        <img src={poster} alt={`${title} Poster`} />
-        <div className="details-overview">
-          <h2>{title}</h2>
-          <p>
-            {released} &bull; {runtime}
-          </p>
-          <p>{genre}</p>
-          <p>⭐️ {imdbRating}</p>
-        </div>
-      </header>
-      <section>
-        <div className="rating">
-          {!isWatched ? (
-            <>
-              <StarComponent
-                maxRating={10}
-                size={24}
-                onSetRating={setUserRating}
-              />
-              {userRating > 0 && (
-                <button className="btn-add" onClick={addMovie}>
-                  Add to List
-                </button>
+      {!loading ? (
+        <>
+          <header>
+            <button className="btn-back" onClick={removeSelcted}>
+              &larr;
+            </button>
+            <img src={poster} alt={`${title} Poster`} />
+            <div className="details-overview">
+              <h2>{title}</h2>
+              <p>
+                {released} &bull; {runtime}
+              </p>
+              <p>{genre}</p>
+              <p>⭐️ {imdbRating}</p>
+            </div>
+          </header>
+          <section>
+            <div className="rating">
+              {!isWatched ? (
+                <>
+                  <StarComponent
+                    maxRating={10}
+                    size={24}
+                    onSetRating={setUserRating}
+                  />
+                  {userRating > 0 && (
+                    <button className="btn-add" onClick={addMovie}>
+                      Add to List
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p>
+                  <em>You have already added this movie</em>
+                </p>
               )}
-            </>
-          ) : (
+            </div>
             <p>
-              <em>You have already added this movie</em>
+              <em>{plot}</em>
             </p>
-          )}
-        </div>
-        <p>
-          <em>{plot}</em>
-        </p>
-        <p>
-          <strong>Actors: </strong> {actors}
-        </p>
-        <p>
-          <strong>Directed By: </strong> {director}
-        </p>
-        <p>
-          <strong>Rated For: </strong> {rating}
-        </p>
-        <p>
-          <strong>Box Office Collection: </strong> {boxOffice}
-        </p>
-      </section>
+            <p>
+              <strong>Actors: </strong> {actors}
+            </p>
+            <p>
+              <strong>Directed By: </strong> {director}
+            </p>
+            <p>
+              <strong>Rated For: </strong> {rating}
+            </p>
+            <p>
+              <strong>Box Office Collection: </strong> {boxOffice}
+            </p>
+          </section>{" "}
+        </>
+      ) : (
+        <Loader />
+      )}
     </div>
   );
 }
