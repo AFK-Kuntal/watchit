@@ -1,28 +1,28 @@
 import { useEffect, useState } from "react";
 import StarComponent from "./StarComponent";
 
-const watched = [
-  {
-    imdbID: "tt1375666",
-    Title: "Inception",
-    Year: "2010",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-    runtime: 148,
-    imdbRating: 8.8,
-    userRating: 10,
-  },
-  {
-    imdbID: "tt0088763",
-    Title: "Back to the Future",
-    Year: "1985",
-    Poster:
-      "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
-    runtime: 116,
-    imdbRating: 8.5,
-    userRating: 9,
-  },
-];
+// const watched = [
+//   {
+//     imdbID: "tt1375666",
+//     Title: "Inception",
+//     Year: "2010",
+//     Poster:
+//       "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
+//     runtime: 148,
+//     imdbRating: 8.8,
+//     userRating: 10,
+//   },
+//   {
+//     imdbID: "tt0088763",
+//     Title: "Back to the Future",
+//     Year: "1985",
+//     Poster:
+//       "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
+//     runtime: 116,
+//     imdbRating: 8.5,
+//     userRating: 9,
+//   },
+// ];
 const APIkey = "f84fc31d";
 const findAverage = (arr) =>
   arr.reduce((sum, num) => sum + num, 0) / arr.length;
@@ -33,14 +33,22 @@ export default function App() {
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
+  const [watched, setWatched] = useState([]);
   const numMovies = movies.length;
 
   const handleSelected = (id) => {
     setSelectedId(id);
     console.log(id);
   };
+
+  const handleAddMovie(movie){
+    setWatched((watched)=>[...watched, movie]);
+  }
+
   const removeSelcted = () => setSelectedId(null);
   useEffect(() => {
+    const controller = new AbortController();
+
     if (!search) {
       setMovies([]);
       return;
@@ -51,6 +59,7 @@ export default function App() {
         setError("");
         const res = await fetch(
           `http://www.omdbapi.com/?apikey=${APIkey}&s=${search}`,
+          { signal: controller.signal },
         );
         console.log(res);
         if (!res.ok) throw new Error("Something Went Wrong");
@@ -60,12 +69,18 @@ export default function App() {
         if (data.Response === "False") throw new Error("Not Found");
         setMovies(data.Search);
       } catch (err) {
-        setError(err.message);
+        if (err.name !== "AbortError") {
+          setError(err.message);
+        }
       } finally {
         setLoad(false);
       }
     }
     fetchMovie();
+
+    return function () {
+      controller.abort();
+    };
   }, [search]);
   return (
     <>
@@ -86,9 +101,11 @@ export default function App() {
             <SelectedMovies
               selectedId={selectedId}
               removeSelcted={removeSelcted}
+              watched={watched}
+              handleAddMovie={handleAddMovie}
             />
           ) : (
-            <Rightbox movies={movies} />
+            <Rightbox watched={watched} />
           )}
         </Box>
       </Main>
@@ -153,10 +170,10 @@ function Leftbox({ movies, handleSelected }) {
   );
 }
 
-function Rightbox() {
+function Rightbox({ watched }) {
   return (
     <>
-      <Summary />
+      <Summary watched={watched} />
       <ul className="list">
         {watched.map((movie) => (
           <WatchedMovie watchedMovie={movie} key={movie.imdbID} />
@@ -166,7 +183,7 @@ function Rightbox() {
   );
 }
 
-function Summary() {
+function Summary({ watched }) {
   const averageIMDBRating = findAverage(
     watched.map((movie) => movie.imdbRating),
   );
@@ -236,8 +253,9 @@ function WatchedMovie({ watchedMovie }) {
   );
 }
 
-function SelectedMovies({ selectedId, removeSelcted }) {
+function SelectedMovies({ selectedId, removeSelcted, watched, handleAddMovie }) {
   const [details, setDetails] = useState({});
+  const [userRating, setUserRating] = useState(null);
   useEffect(() => {
     async function fetchMovieById() {
       try {
@@ -268,7 +286,21 @@ function SelectedMovies({ selectedId, removeSelcted }) {
     Genre: genre,
     Rated: rating,
     BoxOffice: boxOffice,
+    Year: year,
   } = details;
+
+  function addMovie() {
+    const newMovie = {
+      imdbID: selectedId,
+      title,
+      poster,
+      year,
+      imdbRating: Number(imdbRating),
+      userRating,
+      runtime: Number(runtime.split(" ").at(0)),
+    };
+    handleAddMovie(newMovie);
+  }
 
   return (
     <div className="details">
@@ -289,7 +321,12 @@ function SelectedMovies({ selectedId, removeSelcted }) {
       <section>
         <div className="rating">
           {" "}
-          <StarComponent maxRating={10} size={24} />
+          <StarComponent maxRating={10} size={24} onSetRating={setUserRating} />
+          {userRating && (
+            <button className="btn-add" onClick={addMovie}>
+              Add to List
+            </button>
+          )}
         </div>
         <p>
           <em>{plot}</em>
