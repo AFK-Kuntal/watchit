@@ -1,28 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import StarComponent from "./StarComponent";
+import { useLocalStorage } from "./useLocalStorage";
 
-// const watched = [
-//   {
-//     imdbID: "tt1375666",
-//     Title: "Inception",
-//     Year: "2010",
-//     Poster:
-//       "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg",
-//     runtime: 148,
-//     imdbRating: 8.8,
-//     userRating: 10,
-//   },
-//   {
-//     imdbID: "tt0088763",
-//     Title: "Back to the Future",
-//     Year: "1985",
-//     Poster:
-//       "https://m.media-amazon.com/images/M/MV5BZmU0M2Y1OGUtZjIxNi00ZjBkLTg1MjgtOWIyNThiZWIwYjRiXkEyXkFqcGdeQXVyMTQxNzMzNDI@._V1_SX300.jpg",
-//     runtime: 116,
-//     imdbRating: 8.5,
-//     userRating: 9,
-//   },
-// ];
 const APIkey = "f84fc31d";
 const findAverage = (arr) =>
   arr.length ? arr.reduce((sum, num) => sum + num, 0) / arr.length : 0;
@@ -33,7 +12,13 @@ export default function App() {
   const [error, setError] = useState("");
   const [movies, setMovies] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
-  const [watched, setWatched] = useState([]);
+  // const [watched, setWatched] = useState(() => {
+  //   //getting movies from localStorage
+  //   const values = JSON.parse(localStorage.getItem("watchedMovies"));
+  //   return values ? values : [];
+  // });
+  //custom hook for local storage
+  const [watched, setWatched] = useLocalStorage([], "watched");
   const numMovies = movies.length;
 
   const handleSelected = (id) => {
@@ -85,6 +70,12 @@ export default function App() {
       controller.abort();
     };
   }, [search]);
+
+  // storing movies inside localStorage
+  // useEffect(() => {
+  //   localStorage.setItem("watchedMovies", JSON.stringify(watched));
+  // }, [watched]);
+
   return (
     <>
       <Nav search={search} setSearch={setSearch} numMovies={numMovies} />
@@ -117,6 +108,21 @@ export default function App() {
 }
 
 function Nav({ search, setSearch, numMovies }) {
+  const searchEl = useRef(null);
+  console.log(searchEl);
+  useEffect(() => {
+    const callback = (e) => {
+      if (document.activeElement === searchEl.current) return;
+      if (e.code === "Enter") {
+        searchEl.current.focus();
+        setSearch("");
+      }
+    };
+
+    document.addEventListener("keydown", callback);
+    return () => document.removeEventListener("keydown", callback);
+  }, [setSearch]);
+
   return (
     <div className="nav-bar">
       <nav className="logo">
@@ -130,6 +136,7 @@ function Nav({ search, setSearch, numMovies }) {
         placeholder="search movies.."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
+        ref={searchEl}
       ></input>
 
       <p className="num-results">
@@ -209,11 +216,11 @@ function Summary({ watched }) {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{averageIMDBRating}</span>
+          <span>{averageIMDBRating.toFixed(2)}</span>
         </p>
         <p>
           <span>🌟</span>
-          <span>{averageUserRating}</span>
+          <span>{averageUserRating.toFixed(2)}</span>
         </p>
         <p>
           <span>⏳</span>
@@ -343,6 +350,9 @@ function SelectedMovies({
 
     return () => document.removeEventListener("keydown", esckey);
   }, [removeSelcted]);
+
+  //storing in local storage
+  useEffect(() => {}, []);
 
   return (
     <div className="details">
