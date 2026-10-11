@@ -41,9 +41,14 @@ export default function App() {
     console.log(id);
   };
 
-  const handleAddMovie(movie){
-    setWatched((watched)=>[...watched, movie]);
-  }
+  // function handleAddMovie(movie){
+  //   setWatched((watched)=>[...watched, movie]);
+  // }
+  const handleAddMovie = (movie) =>
+    setWatched((watched) => [...watched, movie]);
+
+  const handleRemoveMovie = (id) =>
+    setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
 
   const removeSelcted = () => setSelectedId(null);
   useEffect(() => {
@@ -76,6 +81,7 @@ export default function App() {
         setLoad(false);
       }
     }
+    removeSelcted();
     fetchMovie();
 
     return function () {
@@ -105,7 +111,7 @@ export default function App() {
               handleAddMovie={handleAddMovie}
             />
           ) : (
-            <Rightbox watched={watched} />
+            <Rightbox watched={watched} handleRemoveMovie={handleRemoveMovie} />
           )}
         </Box>
       </Main>
@@ -170,13 +176,17 @@ function Leftbox({ movies, handleSelected }) {
   );
 }
 
-function Rightbox({ watched }) {
+function Rightbox({ watched, handleRemoveMovie }) {
   return (
     <>
       <Summary watched={watched} />
       <ul className="list">
         {watched.map((movie) => (
-          <WatchedMovie watchedMovie={movie} key={movie.imdbID} />
+          <WatchedMovie
+            watchedMovie={movie}
+            key={movie.imdbID}
+            handleRemoveMovie={handleRemoveMovie}
+          />
         ))}
       </ul>
     </>
@@ -230,11 +240,17 @@ function Movie({ movie, handleSelected }) {
   );
 }
 
-function WatchedMovie({ watchedMovie }) {
+function WatchedMovie({ watchedMovie, handleRemoveMovie }) {
   return (
     <li>
-      <img src={watchedMovie.Poster} alt={`${watchedMovie.Title} poster`} />
-      <h3>{watchedMovie.Title}</h3>
+      <button
+        className="btn-delete"
+        onClick={() => handleRemoveMovie(watchedMovie.imdbID)}
+      >
+        &times;
+      </button>
+      <img src={watchedMovie.poster} alt={`${watchedMovie.title} poster`} />
+      <h3>{watchedMovie.title}</h3>
       <div>
         <p>
           <span>⭐️</span>
@@ -253,7 +269,12 @@ function WatchedMovie({ watchedMovie }) {
   );
 }
 
-function SelectedMovies({ selectedId, removeSelcted, watched, handleAddMovie }) {
+function SelectedMovies({
+  selectedId,
+  removeSelcted,
+  watched,
+  handleAddMovie,
+}) {
   const [details, setDetails] = useState({});
   const [userRating, setUserRating] = useState(null);
   useEffect(() => {
@@ -289,6 +310,7 @@ function SelectedMovies({ selectedId, removeSelcted, watched, handleAddMovie }) 
     Year: year,
   } = details;
 
+  const isWatched = watched.map((movie) => movie.imdbID).includes(selectedId);
   function addMovie() {
     const newMovie = {
       imdbID: selectedId,
@@ -300,7 +322,17 @@ function SelectedMovies({ selectedId, removeSelcted, watched, handleAddMovie }) 
       runtime: Number(runtime.split(" ").at(0)),
     };
     handleAddMovie(newMovie);
+    removeSelcted();
   }
+
+  useEffect(() => {
+    if (!title) return title;
+    document.title = `Movie | ${title}`;
+
+    return () => {
+      document.title = "WatchIt";
+    };
+  }, [title]);
 
   return (
     <div className="details">
@@ -320,28 +352,39 @@ function SelectedMovies({ selectedId, removeSelcted, watched, handleAddMovie }) 
       </header>
       <section>
         <div className="rating">
-          {" "}
-          <StarComponent maxRating={10} size={24} onSetRating={setUserRating} />
-          {userRating && (
-            <button className="btn-add" onClick={addMovie}>
-              Add to List
-            </button>
+          {!isWatched ? (
+            <>
+              <StarComponent
+                maxRating={10}
+                size={24}
+                onSetRating={setUserRating}
+              />
+              {userRating > 0 && (
+                <button className="btn-add" onClick={addMovie}>
+                  Add to List
+                </button>
+              )}
+            </>
+          ) : (
+            <p>
+              <em>You have already added this movie</em>
+            </p>
           )}
         </div>
         <p>
           <em>{plot}</em>
         </p>
         <p>
-          <strong>Actors: </strong> <p>{actors}</p>
+          <strong>Actors: </strong> {actors}
         </p>
         <p>
-          <strong>Directed By: </strong> <p>{director}</p>
+          <strong>Directed By: </strong> {director}
         </p>
         <p>
-          <strong>Rated For: </strong> <p>{rating}</p>
+          <strong>Rated For: </strong> {rating}
         </p>
         <p>
-          <strong>Box Office Collection: </strong> <p>{boxOffice}</p>
+          <strong>Box Office Collection: </strong> {boxOffice}
         </p>
       </section>
     </div>
